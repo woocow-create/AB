@@ -1,0 +1,175 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Media {
+  META
+  GOOGLE_SEARCH
+  GOOGLE_DISPLAY
+  YOUTUBE
+  NAVER_GFA
+  KAKAO_MOMENT
+}
+
+enum Placement {
+  INSTAGRAM_FEED
+  INSTAGRAM_REELS
+  FACEBOOK_FEED
+  GDN_BANNER
+  NAVER_GFA_BANNER
+  KAKAO_MOMENT_FEED
+}
+
+enum Objective {
+  AWARENESS
+  TRAFFIC
+  CONVERSION
+}
+
+enum Industry {
+  FOOD_BEVERAGE
+  FASHION
+  BEAUTY
+  FITNESS
+  ECOMMERCE
+  TRAVEL
+  EDUCATION
+  AUTOMOBILE
+  HEALTHCARE
+  REAL_ESTATE
+  B2B_SAAS
+  FINANCE
+  ENTERTAINMENT
+  HOME_SERVICES
+  TECHNOLOGY
+  INSURANCE
+  LEGAL
+}
+
+enum BaselineSource {
+  PRESET
+  USER_ACCOUNT
+}
+
+enum TestVerdict {
+  SKIP_TEST_SHIP_WINNER
+  RUN_TEST
+  INCONCLUSIVE_BY_DESIGN
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  industry    Industry
+  createdAt   DateTime @default(now())
+  simulations Simulation[]
+}
+
+model Simulation {
+  id             String   @id @default(cuid())
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id])
+  title          String
+
+  media          Media
+  placement      Placement
+  objective      Objective
+  targetSummary  String
+  dailyBudgetKrw Int
+  plannedDays    Int
+
+  baselineCtr    Float
+  baselineCvr    Float
+  baselineCpmKrw Int
+  baselineSource BaselineSource
+
+  creatives      Creative[]
+  result         SimulationResult?
+  actual         ActualResult?
+  createdAt      DateTime @default(now())
+}
+
+model Creative {
+  id            String @id @default(cuid())
+  simulationId  String
+  simulation    Simulation @relation(fields: [simulationId], references: [id])
+  label         String
+  imageUrl      String
+  imageMeta     Json
+  headline      String
+  bodyText      String
+  ctaText       String
+
+  score         CreativeScore?
+}
+
+model CreativeScore {
+  id            String @id @default(cuid())
+  creativeId    String @unique
+  creative      Creative @relation(fields: [creativeId], references: [id])
+
+  stopPower       Int
+  hierarchy       Int
+  clarity         Int
+  valueProp       Int
+  ctaStrength     Int
+  audienceFit     Int
+  brandTrust      Int
+  formatFit       Int
+
+  composite       Float
+  scoreStdDev     Float
+  modelConfidence Float
+
+  rationale       Json
+  policyRisks     Json
+  rawResponse     Json
+  createdAt       DateTime @default(now())
+}
+
+model SimulationResult {
+  id             String @id @default(cuid())
+  simulationId   String @unique
+  simulation     Simulation @relation(fields: [simulationId], references: [id])
+
+  perCreative    Json
+  winnerLabel    String
+  winProbability Float
+  liftMedian     Float
+  liftCi95       Json
+  expectedLoss   Json
+
+  requiredImpressionsPerArm Int
+  requiredBudgetKrw         Int
+  requiredDays              Int
+  mdeRelative               Float
+  testVerdict               TestVerdict
+  confidenceGrade           String
+
+  engineVersion  String
+  createdAt      DateTime @default(now())
+}
+
+model ActualResult {
+  id            String @id @default(cuid())
+  simulationId  String @unique
+  simulation    Simulation @relation(fields: [simulationId], references: [id])
+  perCreative   Json
+  enteredAt     DateTime @default(now())
+}
+
+model CalibrationPoint {
+  id            String @id @default(cuid())
+  media         Media
+  industry      Industry
+  predictedCtr  Float
+  actualCtr     Float
+  predictedLift Float
+  actualLift    Float
+  createdAt     DateTime @default(now())
+}
