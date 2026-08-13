@@ -1,4 +1,5 @@
 {
+  "framework": "nextjs",
   "functions": {
     "app/api/simulations/[id]/run/route.ts": {
       "maxDuration": 60
